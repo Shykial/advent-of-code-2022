@@ -16,3 +16,21 @@ fun readInputAsString(name: String) = File("src", "$name.txt").readText().trim()
 fun String.md5() = BigInteger(1, MessageDigest.getInstance("MD5").digest(toByteArray()))
     .toString(16)
     .padStart(32, '0')
+
+inline fun <T> List<T>.chunkedBy(separatorPredicate: (T) -> Boolean): List<List<T>> {
+    val iterator = iterator()
+    if (!iterator.hasNext()) return emptyList()
+    val outerList = mutableListOf<List<T>>()
+    var currentInnerList = mutableListOf(iterator.next())
+
+    for (element in iterator) {
+        if (separatorPredicate(element)) {
+            outerList += currentInnerList
+            currentInnerList = mutableListOf()
+        } else currentInnerList += element
+    }
+    if (currentInnerList.isNotEmpty()) outerList += currentInnerList
+    return outerList
+}
+
+fun String.cutExcluding(delimiter: String) = substringBefore(delimiter) to substringAfter(delimiter)
