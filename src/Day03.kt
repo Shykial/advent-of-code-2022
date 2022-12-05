@@ -15,7 +15,7 @@ fun main() {
     println(part2(input))
 }
 
-fun Char.itemPriority() = when {
+private fun Char.itemPriority() = when {
     isLowerCase() -> code - 'a'.code + 1
     isUpperCase() -> code - 'A'.code + 27
     else -> error("invalid character")

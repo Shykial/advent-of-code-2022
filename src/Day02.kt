@@ -15,9 +15,10 @@ fun main() {
 }
 
 
-fun calculateScore(opponentShape: Shape, yourShape: Shape) = yourShape.score + yourShape.scoreAgainst(opponentShape)
+private fun calculateScore(opponentShape: Shape, yourShape: Shape) =
+    yourShape.score + yourShape.scoreAgainst(opponentShape)
 
-enum class ExpectedResult(val letter: String) {
+private enum class ExpectedResult(val letter: String) {
     LOSE("X"), DRAW("Y"), WIN("Z");
 
     companion object {
@@ -27,7 +28,7 @@ enum class ExpectedResult(val letter: String) {
     }
 }
 
-enum class Shape(
+private enum class Shape(
     val letters: List<String>,
     val score: Int,
 ) {
