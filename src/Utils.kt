@@ -8,7 +8,7 @@ import java.security.MessageDigest
 fun readInput(name: String) = File("src", "$name.txt")
     .readLines()
 
-fun readInputAsString(name: String) = File("src", "$name.txt").readText().trim()
+fun readInputAsString(name: String) = File("src", "$name.txt").readText().trimEnd()
 
 /**
  * Converts string to md5 hash.
@@ -36,3 +36,9 @@ inline fun <T> List<T>.chunkedBy(separatorPredicate: (T) -> Boolean): List<List<
 fun String.cutExcluding(delimiter: String) = substringBefore(delimiter) to substringAfter(delimiter)
 
 inline fun <T, R> Pair<T, T>.map(transform: (T) -> R): Pair<R, R> = transform(first) to transform(second)
+
+fun <E> ArrayDeque<E>.removeLast(n: Int): List<E> =
+    this.slice(size - n..lastIndex)
+        .also { sliceToBeRemoved ->
+            repeat(sliceToBeRemoved.size) { this.removeLast() }
+        }
