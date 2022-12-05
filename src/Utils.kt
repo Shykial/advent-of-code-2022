@@ -34,3 +34,5 @@ inline fun <T> List<T>.chunkedBy(separatorPredicate: (T) -> Boolean): List<List<
 }
 
 fun String.cutExcluding(delimiter: String) = substringBefore(delimiter) to substringAfter(delimiter)
+
+inline fun <T, R> Pair<T, T>.map(transform: (T) -> R): Pair<R, R> = transform(first) to transform(second)
