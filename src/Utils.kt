@@ -56,4 +56,8 @@ inline fun <T> Iterable<T>.countIndexed(predicate: (Int, T) -> Boolean): Int =
 
 fun productOf(a: Int, vararg other: Int): Int = other.fold(a) { acc, i -> acc * i }
 
+fun Iterable<Int>.product(): Int = fold(1) { acc, i -> acc * i }
+
+fun Iterable<Long>.product(): Long = fold(1L) { acc, i -> acc * i }
+
 inline fun <R> Iterable<CharSequence>.mapInner(transform: (Char) -> R): List<List<R>> = map { it.map(transform) }
