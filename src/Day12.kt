@@ -27,7 +27,7 @@ fun main() {
                 }
             }
         }
-        return starts.minOf { findShortestPath(geoMap = geoMap, start = it, end = end) }
+        return starts.minOf { findShortestPath(geoMap = geoMap, start = it, end = end) { p -> p.height != 'a'.code } }
     }
 
     val input = readInput("Day12")
@@ -41,14 +41,23 @@ private data class GeoPoint(
     val height: Int,
 )
 
-private fun GeoPoint.getAvailableNeighbors(geoMap: List<List<GeoPoint>>, visitedPoints: Set<GeoPoint>) = sequenceOf(
+private fun GeoPoint.getAvailableNeighbors(
+    geoMap: List<List<GeoPoint>>,
+    visitedPoints: Set<GeoPoint>,
+    additionalFilter: ((GeoPoint) -> Boolean)? = null
+) = sequenceOf(
     geoMap[(y - 1).coerceAtLeast(0)][x],
     geoMap[y][(x - 1).coerceAtLeast(0)],
     geoMap[y][(x + 1).coerceAtMost(geoMap[y].lastIndex)],
     geoMap[(y + 1).coerceAtMost(geoMap.lastIndex)][x]
-).filter { it !in visitedPoints && it.height <= this.height + 1 }.toList()
+).filter { it !in visitedPoints && it.height <= this.height + 1 && additionalFilter?.invoke(it) ?: true }.toList()
 
-private fun findShortestPath(geoMap: List<List<GeoPoint>>, start: GeoPoint, end: GeoPoint): Int {
+private fun findShortestPath(
+    geoMap: List<List<GeoPoint>>,
+    start: GeoPoint,
+    end: GeoPoint,
+    additionalFilter: ((GeoPoint) -> Boolean)? = null
+): Int {
     val visitedNodes = mutableSetOf<GeoPoint>()
     val unvisitedNodes = geoMap.flatten().toMutableList()
     val pointsMap = mutableMapOf(start to 0)
@@ -58,7 +67,7 @@ private fun findShortestPath(geoMap: List<List<GeoPoint>>, start: GeoPoint, end:
         unvisitedNodes -= currentNode
         visitedNodes += currentNode
         val currentLength = pointsMap[currentNode] ?: return Int.MAX_VALUE
-        currentNode.getAvailableNeighbors(geoMap, visitedNodes).forEach { point ->
+        currentNode.getAvailableNeighbors(geoMap, visitedNodes, additionalFilter).forEach { point ->
             pointsMap.merge(point, currentLength + 1) { oldValue, newValue ->
                 oldValue.takeIf { it <= currentLength + 1 } ?: newValue
             }
