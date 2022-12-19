@@ -12,22 +12,22 @@ fun main() {
                 }
             }
         }
-        return findShortestPath(geoMap = geoMap, start = start, end = end)
+        return findShortestPath(geoMap = geoMap, start = start, endPredicate = end::equals)
     }
 
     fun part2(input: List<String>): Int {
-        lateinit var end: GeoPoint
-        val starts = mutableListOf<GeoPoint>()
+        lateinit var start: GeoPoint
+
         val geoMap = input.mapIndexed { lineIndex, line ->
             line.mapIndexed { charIndex, char ->
                 when (char) {
-                    'a', 'S' -> GeoPoint(y = lineIndex, x = charIndex, height = 'a'.code).also { starts += it }
-                    'E' -> GeoPoint(y = lineIndex, x = charIndex, height = 'z'.code).also { end = it }
+                    'S' -> GeoPoint(y = lineIndex, x = charIndex, height = 'a'.code)
+                    'E' -> GeoPoint(y = lineIndex, x = charIndex, height = 'z'.code).also { start = it }
                     else -> GeoPoint(y = lineIndex, x = charIndex, height = char.code)
                 }
             }
         }
-        return starts.minOf { findShortestPath(geoMap = geoMap, start = it, end = end) { p -> p.height != 'a'.code } }
+        return findShortestPath(geoMap = geoMap, start = start, inverseHeightFilter = true) { it.height == 'a'.code }
     }
 
     val input = readInput("Day12")
@@ -44,19 +44,21 @@ private data class GeoPoint(
 private fun GeoPoint.getAvailableNeighbors(
     geoMap: List<List<GeoPoint>>,
     visitedPoints: Set<GeoPoint>,
-    additionalFilter: ((GeoPoint) -> Boolean)? = null
+    inverseHeightFilter: Boolean
 ) = sequenceOf(
     geoMap[(y - 1).coerceAtLeast(0)][x],
     geoMap[y][(x - 1).coerceAtLeast(0)],
     geoMap[y][(x + 1).coerceAtMost(geoMap[y].lastIndex)],
     geoMap[(y + 1).coerceAtMost(geoMap.lastIndex)][x]
-).filter { it !in visitedPoints && it.height <= this.height + 1 && additionalFilter?.invoke(it) ?: true }.toList()
+).filter { p ->
+    p !in visitedPoints && if (!inverseHeightFilter) (p.height <= this.height + 1) else (this.height <= p.height + 1)
+}.toList()
 
-private fun findShortestPath(
+private inline fun findShortestPath(
     geoMap: List<List<GeoPoint>>,
     start: GeoPoint,
-    end: GeoPoint,
-    additionalFilter: ((GeoPoint) -> Boolean)? = null
+    inverseHeightFilter: Boolean = false,
+    endPredicate: (GeoPoint) -> Boolean,
 ): Int {
     val visitedNodes = mutableSetOf<GeoPoint>()
     val unvisitedNodes = geoMap.flatten().toMutableList()
@@ -67,12 +69,16 @@ private fun findShortestPath(
         unvisitedNodes -= currentNode
         visitedNodes += currentNode
         val currentLength = pointsMap[currentNode] ?: return Int.MAX_VALUE
-        currentNode.getAvailableNeighbors(geoMap, visitedNodes, additionalFilter).forEach { point ->
-            pointsMap.merge(point, currentLength + 1) { oldValue, newValue ->
-                oldValue.takeIf { it <= currentLength + 1 } ?: newValue
+        currentNode
+            .getAvailableNeighbors(geoMap, visitedNodes, inverseHeightFilter)
+            .forEach { point ->
+                if (endPredicate(point)) {
+                    return currentLength + 1
+                }
+                pointsMap.merge(point, currentLength + 1) { oldValue, newValue ->
+                    oldValue.takeIf { it <= currentLength + 1 } ?: newValue
+                }
             }
-        }
-        pointsMap[end]?.let { return it }
     }
-    error("no value returned from sequence")
+    error("no proper path found")
 }
