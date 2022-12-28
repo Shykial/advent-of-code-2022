@@ -1,15 +1,35 @@
 fun main() {
-    fun part1(input: List<String>) = parseInput(input)
-        .foldIndexed(0) { index, acc, (first, second) ->
+    fun part1(input: List<String>) = input
+        .chunkedBy { it.isBlank() }
+        .map { (first, second) ->
+            DataPacketPair(
+                parsePacketLine(first),
+                parsePacketLine(second)
+            )
+        }.foldIndexed(0) { index, acc, (first, second) ->
             if (arePacketsInTheRightOrder(first, second)) acc + index + 1 else acc
         }
 
-    fun part2(input: String): Int {
-        TODO()
+    fun part2(input: List<String>): Int {
+        val firstExtraPacket = listOf(ListUnit(listOf(IntUnit(2))))
+        val secondExtraPacket = listOf(ListUnit(listOf(IntUnit(6))))
+        val sortedPackets = input
+            .filter { it.isNotBlank() }
+            .map(::parsePacketLine)
+            .plus(sequenceOf(firstExtraPacket, secondExtraPacket))
+            .sortedWith { o1, o2 ->
+                when {
+                    o1 == o2 -> 0
+                    arePacketsInTheRightOrder(o1, o2) -> -1
+                    else -> 1
+                }
+            }
+        return (sortedPackets.indexOf(firstExtraPacket) + 1) * (sortedPackets.indexOf(secondExtraPacket) + 1)
     }
 
     val input = readInput("Day13")
     println(part1(input))
+    println(part2(input))
 }
 
 private fun arePacketsInTheRightOrder(first: List<PacketUnit>, second: List<PacketUnit>): Boolean {
@@ -32,15 +52,6 @@ private fun arePacketsInTheRightOrder(first: List<PacketUnit>, second: List<Pack
     }
     return first.size <= second.size
 }
-
-private fun parseInput(input: List<String>) = input
-    .chunkedBy { it.isBlank() }
-    .map { (first, second) ->
-        DataPacketPair(
-            parsePacketLine(first),
-            parsePacketLine(second)
-        )
-    }
 
 private fun parsePacketLine(packetLine: String): List<PacketUnit> {
     val rootNode = ListPacketNode()
