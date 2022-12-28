@@ -1,14 +1,36 @@
 fun main() {
-    fun part1(input: List<String>): Int {
-        TODO()
-    }
+    fun part1(input: List<String>) = parseInput(input)
+        .foldIndexed(0) { index, acc, (first, second) ->
+            if (arePacketsInTheRightOrder(first, second)) acc + index + 1 else acc
+        }
 
     fun part2(input: String): Int {
         TODO()
     }
 
-    val testInput = readInput("Day13_test")
-    println(parseInput(testInput))
+    val input = readInput("Day13")
+    println(part1(input))
+}
+
+private fun arePacketsInTheRightOrder(first: List<PacketUnit>, second: List<PacketUnit>): Boolean {
+    first.zip(second).forEach { (firstUnit, secondUnit) ->
+        when (firstUnit) {
+            is IntUnit -> when (secondUnit) {
+                is IntUnit -> if (firstUnit.value != secondUnit.value) return firstUnit.value < secondUnit.value
+                is ListUnit -> if (listOf(firstUnit) != secondUnit.values)
+                    return arePacketsInTheRightOrder(listOf(firstUnit), secondUnit.values)
+            }
+
+            is ListUnit -> when (secondUnit) {
+                is IntUnit -> if (firstUnit.values != listOf(secondUnit))
+                    return arePacketsInTheRightOrder(firstUnit.values, listOf(secondUnit))
+
+                is ListUnit -> if (firstUnit != secondUnit)
+                    return arePacketsInTheRightOrder(firstUnit.values, secondUnit.values)
+            }
+        }
+    }
+    return first.size <= second.size
 }
 
 private fun parseInput(input: List<String>) = input
@@ -20,36 +42,29 @@ private fun parseInput(input: List<String>) = input
         )
     }
 
-private fun parsePacketLine(packetLine: String) = buildList<PacketUnit> {
-    var currentListPacketNode: ListPacketNode? = null
-    packetLine.substring(1, packetLine.lastIndex).forEach { char ->
-        when (char) {
-            in '0'..'9' -> {
-                val intUnit = IntUnit(char.digitToInt())
-                when (val listPacket = currentListPacketNode) {
-                    null -> this += intUnit
-                    else -> listPacket.value += intUnit
-                }
-            }
+private fun parsePacketLine(packetLine: String): List<PacketUnit> {
+    val rootNode = ListPacketNode()
+    var currentListPacketNode = rootNode
+    val digitBuilder = StringBuilder()
 
-            '[' -> {
-                val listPacketNode = ListPacketNode(upperNode = currentListPacketNode)
-                if (currentListPacketNode == null) {
-                    this += listPacketNode.value
+    packetLine.substring(1).forEach { char ->
+        if (char in '0'..'9') digitBuilder.append(char)
+        else {
+            if (digitBuilder.isNotEmpty()) currentListPacketNode.value += IntUnit(digitBuilder.toString().toInt())
+            digitBuilder.clear()
+            when (char) {
+                '[' -> {
+                    ListPacketNode(upperNode = currentListPacketNode)
+                    val listPacketNode = ListPacketNode(upperNode = currentListPacketNode)
+                    currentListPacketNode.value += ListUnit(listPacketNode.value)
                     currentListPacketNode = listPacketNode
                 }
-                currentListPacketNode!!.value += listPacketNode.value
-                currentListPacketNode = listPacketNode
+
+                ']' -> if (currentListPacketNode != rootNode) currentListPacketNode = currentListPacketNode.upperNode!!
             }
-
-            ']' -> {
-                currentListPacketNode = currentListPacketNode?.upperNode
-            }
-
-            ',' -> Unit
-
         }
     }
+    return rootNode.value
 }
 
 private data class ListPacketNode(
